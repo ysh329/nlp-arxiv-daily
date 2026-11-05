@@ -31,6 +31,7 @@ const isSurvey = parsed ? /\b(survey|review|overview)\b/i.test(parsed.title) : f
       {primaryCategory && <span class="text-xs px-1.5 py-0.5 rounded border border-(--color-border)" title="arXiv primary category" data-pagefind-ignore>{primaryCategory}</span>}
       <a class="text-(--color-accent) hover:underline" href={parsed.paperUrl} target="_blank" rel="noopener" data-pagefind-ignore>arxiv:{paperId}</a>
       {parsed.codeLink && <a class="text-(--color-accent) hover:underline" href={parsed.codeLink} target="_blank" rel="noopener" data-pagefind-ignore>code</a>}
+      {parsed.modelLink && <a class="text-(--color-accent) hover:underline" href={parsed.modelLink} target="_blank" rel="noopener" data-pagefind-ignore>model</a>}
       <button type="button" class="text-(--color-accent) hover:underline cursor-pointer" data-bibtex={bibtex} title="Copy BibTeX entry" aria-label={`Copy BibTeX for ${parsed.title}`} data-pagefind-ignore>bibtex</button>
     </div>
     <span class="Z3988" title={coins} aria-hidden="true" data-pagefind-ignore></span>

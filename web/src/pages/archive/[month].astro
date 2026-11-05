@@ -4,68 +4,20 @@ import Layout from "../../layouts/Layout.astro";
 import { withBase } from "../../utils/url.ts";
 import { keywordSlug } from "../../utils/keyword.ts";
 import { isCurrentMonth, keywordStats, listMonths } from "../../utils/papers.ts";
-
-// One index page per month (archive snapshots + the live current month).
-// The paper lists themselves live on the per-keyword pages under it: a
-// full month is ~10k rows, far too many for one document.
-export async function getStaticPaths() {
-  return listMonths().map((month) => ({ params: { month } }));
-}
-
+export async function getStaticPaths() { return listMonths().map((month) => ({ params: { month } })); }
 const { month } = Astro.params;
 const stats = keywordStats(month);
-const totalPapers = stats.reduce((sum, s) => sum + s.count, 0);
+const totalPapers = stats.reduce((sum, stat) => sum + stat.count, 0);
 const current = isCurrentMonth(month);
 ---
-
-<Layout
-  title={`${month} — ${SITE_NAME}`}
-  description={`NLP arxiv papers from ${month}`}
-  current="archive"
-  ogSlug={`archive/${month}`}
->
+<Layout title={`${month} — ${SITE_NAME}`} description={`AI infra arxiv papers from ${month}`} current="archive" ogSlug={`archive/${month}`}>
   <main class="max-w-3xl mx-auto px-6 py-10" data-pagefind-ignore="all">
     <header class="mb-10">
-      <p class="text-sm text-(--color-muted) mb-2">
-        <a class="hover:text-(--color-accent) hover:underline" href={withBase("/archive/")}>
-          ← all archives
-        </a>
-      </p>
+      <p class="text-sm text-(--color-muted) mb-2"><a class="hover:text-(--color-accent) hover:underline" href={withBase("/archive/")}>← all archives</a></p>
       <h1 class="text-4xl font-bold mb-2">{month}</h1>
-      <p class="text-(--color-muted) text-sm">
-        {totalPapers} papers across {stats.length} keywords.
-        {current && " Current month — grows with every 12-hour update."}
-      </p>
-      {stats.length > 0 && (
-        <p class="text-(--color-muted) text-sm mt-1">
-          <a class="text-(--color-accent) hover:underline" href={withBase(`/archive/${month}/all.bib`)} download>
-            Download the whole month as BibTeX
-          </a>
-        </p>
-      )}
+      <p class="text-(--color-muted) text-sm">{totalPapers} papers across {stats.length} keywords. {current && " Current month — grows with every two-day update."}</p>
+      {stats.length > 0 && <p class="text-(--color-muted) text-sm mt-1"><a class="text-(--color-accent) hover:underline" href={withBase(`/archive/${month}/all.bib`)} download>Download the whole month as BibTeX</a></p>}
     </header>
-
-    {stats.length > 0 ? (
-      <ul class="divide-y divide-(--color-border)">
-        {stats.map(({ keyword, count }) => {
-          const slug = keywordSlug(keyword);
-          return (
-            <li class="py-3 flex items-baseline justify-between gap-4">
-              <a class="font-medium hover:text-(--color-accent) hover:underline" href={withBase(`/archive/${month}/${slug}/`)}>
-                {keyword}
-              </a>
-              <span class="text-sm text-(--color-muted) flex items-center gap-3 whitespace-nowrap">
-                <span>{count} paper{count === 1 ? "" : "s"}</span>
-                <a class="text-(--color-accent) hover:underline" href={withBase(`/archive/${month}/${slug}.bib`)} download>
-                  .bib
-                </a>
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    ) : (
-      <p class="text-(--color-muted)">No papers in this snapshot.</p>
-    )}
+    {stats.length > 0 ? (<ul class="divide-y divide-(--color-border)">{stats.map(({ keyword, count }) => { const slug = keywordSlug(keyword); return (<li class="py-3 flex items-baseline justify-between gap-4"><a class="font-medium hover:text-(--color-accent) hover:underline" href={withBase(`/archive/${month}/${slug}/`)}>{keyword}</a><span class="text-sm text-(--color-muted) flex items-center gap-3 whitespace-nowrap"><span>{count} paper{count === 1 ? "" : "s"}</span><a class="text-(--color-accent) hover:underline" href={withBase(`/archive/${month}/${slug}.bib`)} download>.bib</a></span></li>); })}</ul>) : (<p class="text-(--color-muted)">No papers in this snapshot.</p>)}
   </main>
 </Layout>

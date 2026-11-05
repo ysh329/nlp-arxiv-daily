@@ -3,12 +3,8 @@ import { SITE_NAME } from "../../config.ts";
 import Layout from "../../layouts/Layout.astro";
 import { withBase } from "../../utils/url.ts";
 import { getCurrentMonthId, listMonths } from "../../utils/papers.ts";
-
-// Newest first; includes the live current month.
 const months = listMonths();
 const currentId = getCurrentMonthId();
-
-// Group by year so the long list is browsable on a dense screen.
 const byYear = new Map<string, string[]>();
 for (const month of months) {
   const year = month.slice(0, 4);
@@ -16,34 +12,11 @@ for (const month of months) {
   byYear.get(year)!.push(month);
 }
 ---
-
 <Layout title={`Archive — ${SITE_NAME}`} current="archive" ogSlug="archive">
   <main class="max-w-3xl mx-auto px-6 py-10" data-pagefind-ignore="all">
-    <header class="mb-10">
-      <h1 class="text-4xl font-bold mb-2">Archive</h1>
-      <p class="text-(--color-muted) text-sm">
-        {months.length > 0
-          ? `${months.length} monthly snapshot${months.length === 1 ? "" : "s"} since ${months[months.length - 1]}.`
-          : "No months collected yet — the cron picks papers up daily."}
-      </p>
-    </header>
-
+    <header class="mb-10"><h1 class="text-4xl font-bold mb-2">Archive</h1><p class="text-(--color-muted) text-sm">{months.length > 0 ? `${months.length} monthly snapshots since ${months[months.length - 1]}.` : "No months collected yet — the cron picks papers up every two days."}</p></header>
     {Array.from(byYear.entries()).map(([year, items]) => (
-      <section class="mb-8">
-        <h2 class="text-xl font-semibold mb-2">{year}</h2>
-        <ul class="flex flex-wrap gap-2">
-          {items.map((month) => (
-            <li>
-              <a
-                class="inline-block px-3 py-1 rounded border border-(--color-muted)/30 hover:border-(--color-accent) hover:text-(--color-accent) text-sm"
-                href={withBase(`/archive/${month}/`)}
-              >
-                {month}{month === currentId && <span class="text-(--color-muted)"> · current</span>}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <section class="mb-8"><h2 class="text-xl font-semibold mb-2">{year}</h2><ul class="flex flex-wrap gap-2">{items.map((month) => (<li><a class="inline-block px-3 py-1 rounded border border-(--color-muted)/30 hover:border-(--color-accent) hover:text-(--color-accent) text-sm" href={withBase(`/archive/${month}/`)}>{month}{month === currentId && <span class="text-(--color-muted)"> · current</span>}</a></li>))}</ul></section>
     ))}
   </main>
 </Layout>
