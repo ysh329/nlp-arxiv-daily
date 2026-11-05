@@ -2,23 +2,12 @@
 import { parsePaper, type PaperValue } from "../utils/paperRow.ts";
 import { paperBibtex } from "../utils/bibtex.ts";
 import { coinsTitle } from "../utils/coins.ts";
-
-interface Props {
-  paperId: string;
-  row: PaperValue;
-  /** Keyword section the card sits in — becomes a Zotero tag via COinS. */
-  keyword?: string;
-}
-
+interface Props { paperId: string; row: PaperValue; keyword?: string; }
 const MAX_AUTHORS_SHOWN = 3;
-
 const { paperId, row, keyword } = Astro.props;
 const parsed = parsePaper(row);
 const bibtex = parsed ? paperBibtex(paperId, parsed) : null;
 const coins = parsed ? coinsTitle(paperId, parsed, keyword) : null;
-
-// Legacy rows only know the first author → "X et al.". Records list up to
-// three names and append "et al." only when there are more.
 let byline = "";
 if (parsed) {
   if (parsed.authors.length === 0) byline = `${parsed.firstAuthor} et al.`;
@@ -28,98 +17,34 @@ if (parsed) {
   }
 }
 const primaryCategory = parsed?.categories[0] ?? null;
+const isSurvey = parsed ? /\b(survey|review|overview)\b/i.test(parsed.title) : false;
 ---
-
 {parsed ? (
-  <article
-    class="paper-card py-3 border-b border-(--color-border) last:border-b-0"
-    data-pagefind-body
-  >
+  <article class="paper-card py-3 border-b border-(--color-border) last:border-b-0" data-pagefind-body>
     <div class="flex items-baseline justify-between gap-3 mb-1">
-      <h3 class="font-medium leading-snug" data-pagefind-meta="title">
-        <a
-          class="hover:text-(--color-accent) hover:underline"
-          href={parsed.paperUrl}
-          target="_blank"
-          rel="noopener"
-        >
-          {parsed.title}
-        </a>
-      </h3>
-      <time class="text-(--color-muted) text-xs whitespace-nowrap shrink-0" data-pagefind-meta="date">
-        {parsed.date}
-      </time>
+      <h3 class="font-medium leading-snug" data-pagefind-meta="title"><a class="hover:text-(--color-accent) hover:underline" href={parsed.paperUrl} target="_blank" rel="noopener">{parsed.title}</a></h3>
+      <time class="text-(--color-muted) text-xs whitespace-nowrap shrink-0" data-pagefind-meta="date">{parsed.date}</time>
     </div>
     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-(--color-muted)">
       <span data-pagefind-meta="author">{byline}</span>
-      {primaryCategory && (
-        <span class="text-xs px-1.5 py-0.5 rounded border border-(--color-border)" title="arXiv primary category" data-pagefind-ignore>
-          {primaryCategory}
-        </span>
-      )}
-      <a
-        class="text-(--color-accent) hover:underline"
-        href={parsed.paperUrl}
-        target="_blank"
-        rel="noopener"
-        data-pagefind-ignore
-      >
-        arxiv:{paperId}
-      </a>
-      {parsed.codeLink && (
-        <a
-          class="text-(--color-accent) hover:underline"
-          href={parsed.codeLink}
-          target="_blank"
-          rel="noopener"
-          data-pagefind-ignore
-        >
-          code
-        </a>
-      )}
-      <button
-        type="button"
-        class="text-(--color-accent) hover:underline cursor-pointer"
-        data-bibtex={bibtex}
-        title="Copy BibTeX entry"
-        aria-label={`Copy BibTeX for ${parsed.title}`}
-        data-pagefind-ignore
-      >
-        bibtex
-      </button>
+      {isSurvey && <span class="text-xs px-1.5 py-0.5 rounded border border-(--color-accent) text-(--color-accent)" data-pagefind-ignore>综述</span>}
+      {primaryCategory && <span class="text-xs px-1.5 py-0.5 rounded border border-(--color-border)" title="arXiv primary category" data-pagefind-ignore>{primaryCategory}</span>}
+      <a class="text-(--color-accent) hover:underline" href={parsed.paperUrl} target="_blank" rel="noopener" data-pagefind-ignore>arxiv:{paperId}</a>
+      {parsed.codeLink && <a class="text-(--color-accent) hover:underline" href={parsed.codeLink} target="_blank" rel="noopener" data-pagefind-ignore>code</a>}
+      <button type="button" class="text-(--color-accent) hover:underline cursor-pointer" data-bibtex={bibtex} title="Copy BibTeX entry" aria-label={`Copy BibTeX for ${parsed.title}`} data-pagefind-ignore>bibtex</button>
     </div>
-    {/* No abstract here: on a 1000+ card page abstracts tripled the HTML,
-        and the pipeline no longer stores them in the JSON anyway. */}
-    {/* COinS: lets the Zotero connector save every paper on the page.
-        Zero-size span by design — Zotero reads the title attribute only. */}
     <span class="Z3988" title={coins} aria-hidden="true" data-pagefind-ignore></span>
   </article>
-) : (
-  <article class="py-3 border-b border-(--color-muted)/15 last:border-b-0 text-(--color-muted) text-sm">
-    <span>{paperId}</span> — unparseable row
-  </article>
-)}
-
+) : (<article class="py-3 border-b border-(--color-muted)/15 last:border-b-0 text-(--color-muted) text-sm"><span>{paperId}</span> — unparseable row</article>)}
 <script>
-  // One delegated listener for every card's "bibtex" button. Astro hoists
-  // this script once per page regardless of how many cards render.
   const RESET_MS = 1500;
   document.addEventListener("click", async (event) => {
     const btn = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-bibtex]");
     if (!btn) return;
     const text = btn.dataset.bibtex ?? "";
     const label = btn.textContent;
-    try {
-      await navigator.clipboard.writeText(text);
-      btn.textContent = "copied";
-    } catch {
-      // Clipboard API unavailable (insecure context, old browser) — show
-      // the entry so the reader can copy it by hand.
-      window.prompt("Copy BibTeX:", text);
-      return;
-    }
-    window.setTimeout(() => {
-      btn.textContent = label;
-    }, RESET_MS);
+    try { await navigator.clipboard.writeText(text); btn.textContent = "copied"; }
+    catch { window.prompt("Copy BibTeX:", text); return; }
+    window.setTimeout(() => { btn.textContent = label; }, RESET_MS);
   });
 </script>

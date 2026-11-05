@@ -1,10 +1,7 @@
 ---
-const today = new Date().toISOString().slice(0, 10);
+import { SITE_NAME, REPO_URL } from "../config.ts";
 ---
-
-<footer class="border-t border-(--color-muted)/20 mt-16">
-  <div class="max-w-3xl mx-auto px-6 py-6 flex items-center justify-between text-sm text-(--color-muted)">
-    <span>Daily-refreshed NLP arxiv digest.</span>
-    <span>Built {today}</span>
-  </div>
+<footer class="max-w-3xl mx-auto px-6 pb-10 text-sm text-(--color-muted) flex flex-wrap justify-between gap-3">
+  <span>{SITE_NAME} · 每两天更新</span>
+  <a class="text-(--color-accent) hover:underline" href={REPO_URL}>Source</a>
 </footer>

@@ -8,50 +8,14 @@ import TableOfContents from "../components/TableOfContents.astro";
 import { withBase } from "../utils/url.ts";
 import { keywordSlug } from "../utils/keyword.ts";
 import { LATEST_PER_KEYWORD, resolveLatest } from "../utils/papers.ts";
-
 const { keywords, monthId, fallbackMonth } = resolveLatest();
-
-const totalPapers = keywords.reduce(
-  (sum, [, papers]) => sum + Object.keys(papers).length,
-  0,
-);
+const totalPapers = keywords.reduce((sum, [, papers]) => sum + Object.keys(papers).length, 0);
 const today = new Date().toISOString().slice(0, 10);
 const bibDir = "/bibtex";
 ---
-
 <Layout title={SITE_NAME} current="home">
-  {/* Search indexes the keyword month pages, which hold every paper; the
-      Latest page would only duplicate them. */}
   <main class="max-w-3xl mx-auto px-6 py-10" data-pagefind-ignore="all">
-    <LatestHeader
-      today={today}
-      totalPapers={totalPapers}
-      keywordCount={keywords.length}
-      perKeyword={LATEST_PER_KEYWORD}
-      monthId={monthId}
-      fallbackMonth={fallbackMonth}
-      bibHref={withBase(`${bibDir}/all.bib`)}
-    />
-
-    {keywords.length > 0 ? (
-      <>
-        <KeywordFilter keywords={keywords.map(([k]) => k)} />
-        <TableOfContents keywords={keywords} />
-        {keywords.map(([keyword, papers]) => (
-          <KeywordSection
-            keyword={keyword}
-            papers={papers}
-            bibDir={bibDir}
-            rss
-            limit={LATEST_PER_KEYWORD}
-            moreHref={monthId ? withBase(`/archive/${monthId}/${keywordSlug(keyword)}/`) : undefined}
-          />
-        ))}
-      </>
-    ) : (
-      <p class="text-(--color-muted)">
-        No papers published yet this month — the cron picks them up daily.
-      </p>
-    )}
+    <LatestHeader today={today} totalPapers={totalPapers} keywordCount={keywords.length} perKeyword={LATEST_PER_KEYWORD} monthId={monthId} fallbackMonth={fallbackMonth} bibHref={withBase(`${bibDir}/all.bib`)} />
+    {keywords.length > 0 ? (<><KeywordFilter keywords={keywords.map(([k]) => k)} /><TableOfContents keywords={keywords} />{keywords.map(([keyword, papers]) => (<KeywordSection keyword={keyword} papers={papers} bibDir={bibDir} rss limit={LATEST_PER_KEYWORD} moreHref={monthId ? withBase(`/archive/${monthId}/${keywordSlug(keyword)}/`) : undefined} />))}</>) : (<p class="text-(--color-muted)">本月还没有论文，定时任务每两天抓取一次。</p>)}
   </main>
 </Layout>
