@@ -1,11 +1,4 @@
-"""Conversions between `Paper`, the structured `WebRecord` persisted in the
-gitpage JSON files, and the legacy one-line markdown row.
-
-The pipeline writes dicts only. Rows written before the switch were strings;
-this repo's data has since been rewritten as dicts, but readers still accept
-both shapes so older data keeps working. `web_record_to_line` lets the
-(retired, but still tested) markdown renderer treat both uniformly.
-"""
+"""Conversions between Paper, persisted web records, and legacy rows."""
 
 from __future__ import annotations
 
@@ -14,15 +7,11 @@ import re
 from nlp_arxiv_daily.types import Paper, PaperValue, WebRecord
 
 
-# Legacy rows carry the code link as `**[<text>](<url>)**` — bullet rows as
-# `Code: **[url](url)**`, README pipe rows as `|**[link](url)**|`.
 _LEGACY_CODE_RE = re.compile(r"\*\*\[[^\]]*\]\((https?://[^)]+)\)\*\*")
 
 
 def paper_to_web_record(p: Paper) -> WebRecord:
-    """Persisted shape. `Paper.abstract` is intentionally left out: abstracts
-    were ~60% of the JSON, the site does not render them, and they can be
-    re-fetched with `backfill` if a future feature needs them."""
+    """Persist public links; abstracts remain excluded to keep JSON compact."""
     authors = list(p.authors) if p.authors else [p.first_author]
     return {
         "date": p.update_time.isoformat(),
@@ -30,12 +19,12 @@ def paper_to_web_record(p: Paper) -> WebRecord:
         "authors": authors,
         "url": p.paper_url,
         "code": p.code_link,
+        **({"model": p.model_link} if p.model_link else {}),
         "categories": list(p.categories),
     }
 
 
 def web_line(date: str, title: str, first_author: str, url: str, code: str | None) -> str:
-    """The legacy gitpage row: `- <date>, **<title>**, <author> et.al., Paper: [url](url)[, Code: **[c](c)**]`."""
     line = f"- {date}, **{title}**, {first_author} et.al., Paper: [{url}]({url})"
     if code:
         line += f", Code: **[{code}]({code})**"
@@ -43,8 +32,6 @@ def web_line(date: str, title: str, first_author: str, url: str, code: str | Non
 
 
 def web_record_to_line(value: PaperValue) -> str:
-    """Legacy string rows pass through untouched; dict records are rendered
-    into the identical line shape."""
     if isinstance(value, str):
         return value
     authors = value.get("authors") or [""]
@@ -52,9 +39,7 @@ def web_record_to_line(value: PaperValue) -> str:
 
 
 def code_link_from_value(value: PaperValue) -> str | None:
-    """Code link already stored for a paper, from either value shape. Lets a
-    re-fetch reuse it instead of asking HuggingFace Papers again."""
     if isinstance(value, dict):
         return value.get("code") or None
-    m = _LEGACY_CODE_RE.search(value)
-    return m.group(1) if m else None
+    match = _LEGACY_CODE_RE.search(value)
+    return match.group(1) if match else None

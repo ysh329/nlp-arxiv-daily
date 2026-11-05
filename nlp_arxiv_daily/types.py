@@ -2,23 +2,22 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 
 @dataclass(frozen=True)
 class Paper:
-    paper_id: str  # versionless arxiv id, e.g. "2108.09112"
+    paper_id: str
     title: str
     first_author: str
     update_time: date
     paper_url: str
     code_link: str | None
-    arxiv_short_id: str = ""  # raw arxiv short id incl. version, e.g. "2108.09112v1"
-    # Structured extras captured since the web JSON moved to dict records.
-    # Tuples (not lists) so the frozen dataclass stays hashable.
+    model_link: str | None = None
+    arxiv_short_id: str = ""
     authors: tuple[str, ...] = ()
-    abstract: str = ""  # captured from arxiv, NOT persisted (see records.py)
-    categories: tuple[str, ...] = ()  # arxiv categories, primary first
+    abstract: str = ""
+    categories: tuple[str, ...] = ()
 
 
 class KeywordConfig(TypedDict):
@@ -26,19 +25,15 @@ class KeywordConfig(TypedDict):
 
 
 class WebRecord(TypedDict):
-    """One paper in the gitpage JSON files (docs/*.json). Replaces the
-    one-line markdown string; older data may still hold strings, so consumers
-    accept `str | WebRecord`."""
-
-    date: str  # ISO YYYY-MM-DD submission date
+    date: str
     title: str
     authors: list[str]
-    url: str  # arxiv abs URL incl. version
+    url: str
     code: str | None
+    model: NotRequired[str | None]
     categories: list[str]
 
 
-# Value is a WebRecord (dict) or, in older data, a legacy markdown row (str).
 PaperValue = str | dict[str, Any]
 PapersByKeyword = dict[str, dict[str, PaperValue]]
 PapersByMonth = dict[str, dict[str, dict[str, PaperValue]]]
